@@ -29,9 +29,9 @@ exports.requestpayout = async (req, res) => {
 
     const maintenances = await Maintenance.findOne({ type: "payout" }).then((data) => data);
 
-    if (maintenances.value == "1") {
-        return res.status(400).json({ message: "failed", data: "Cashout is available only in " });
-    }
+     if (maintenances.value == "1") {
+         return res.status(400).json({ message: "failed", data: "Cashout is available only in " });
+     }
 
     const exist = await Payout.find({
         owner: new mongoose.Types.ObjectId(id),

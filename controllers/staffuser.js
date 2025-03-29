@@ -40,7 +40,7 @@ exports.getsadashboard = async(req, res) => {
     const productspipeline = [
         {
             $match: {
-                $or: [{type: "Buy Quick Miner"}, {type: "Buy Swift Lane"}, {type: "Buy Rapid Lane"}]
+                $or: [{type: "Buy Rolex AI Bot buy one take one"}, {type: "Buy Patek Philippe AI Bot buy one take one"}, {type: "Buy Audemars Piguet AI Bot buy one take one"},{type: "Buy Rolex AI Bot"}, {type: "Buy Patek Philippe AI Bot"}, {type: "Buy Audemars Piguet AI Bot"}]
             }
         },
         {
@@ -59,7 +59,7 @@ exports.getsadashboard = async(req, res) => {
         return res.status(400).json({ message: "bad-request", data: `There's a problem with the server. Please try again later. Error: ${err}` })
     })
 
-    data["minerprofit"] = products.length > 0 ? products[0].totalAmount : 0
+    data["chronoprofit"] = products.length > 0 ? products[0].totalAmount : 0
 
     const commissioned = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(process.env.ADMIN_ID), type: "commissionwallet"})
     .then(data => data.amount)

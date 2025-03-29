@@ -18,6 +18,7 @@ exports.getchrono = async(req, res)=> {
         data.push({
             id: temp._id,
             name: temp.name,
+            type: temp.type,
             min: temp.min,
             max: temp.max,
             duration: temp.duration,

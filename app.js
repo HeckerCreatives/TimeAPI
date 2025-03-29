@@ -51,5 +51,5 @@ socketSetup(io)
 
 
 
-const port = process.env.PORT || 5003; // Dynamic port for deployment
+const port = process.env.PORT || 5001; // Dynamic port for deployment
 server.listen(port, () => console.log(`Server is running on port: ${port}`));

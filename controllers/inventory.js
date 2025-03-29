@@ -158,7 +158,7 @@ exports.getinventory = async (req, res) => {
     let index = 0
 
     chrono.forEach(datachrono => {
-        const {_id, type, price, profit, duration, isb1t1, startdate, createdAt} = datachrono
+        const {_id, type, price, profit, duration, isb1t1, startdate, createdAt, name} = datachrono
 
         console.log(startdate, duration)
         console.log(AddUnixtimeDay(startdate, duration))
@@ -175,6 +175,7 @@ exports.getinventory = async (req, res) => {
 
         data.chronos[index] = {
             chronoid: _id,
+            name: name,
             type: type,
             buyprice: price,
             profit: profit,

@@ -6,8 +6,8 @@ router
 
     //  #region USER
 
-    // .get("/getrequesthistoryuser", protectplayer, getrequesthistoryplayer)
-    // .post("/requestuserpayout", protectplayer, requestpayout)
+    .get("/getrequesthistoryuser", protectplayer, getrequesthistoryplayer)
+    .post("/requestuserpayout", protectplayer, requestpayout)
 
     //  #endregion
 
