@@ -77,7 +77,8 @@ exports.buychrono = async (req, res) => {
         const totalprofitb1t1 = (totalprofit * 2) + pricechrono
         const timesprofit = chrono.profit * 2
 
-        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: timesprofit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
+        //  PAYMENT + PROFIT
+        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: chrono.profit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
         .catch(err => {
     
             console.log(`Failed to chrono inventory data for ${username} type: ${type} b1t1: true, error: ${err}`)
@@ -87,6 +88,18 @@ exports.buychrono = async (req, res) => {
         const inventoryhistory = await saveinventoryhistory(id, chrono.type, pricechrono, `Buy ${chrono.name} buy one take one`)
 
         await addanalytics(id, inventoryhistory.data.transactionid, `Buy ${chrono.name} buy one take one`, `User ${username} bought ${chrono.type}`, pricechrono)
+
+        //  PROFIT
+        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: chrono.profit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Free'})
+        .catch(err => {
+    
+            console.log(`Failed to chrono inventory data for ${username} type: ${type} b1t1: true, error: ${err}`)
+    
+            return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        })
+        const inventoryhistoryfree = await saveinventoryhistory(id, chrono.type, 0, `Buy ${chrono.name} buy one take one`)
+
+        await addanalytics(id, inventoryhistoryfree.data.transactionid, `Buy ${chrono.name} buy one take one`, `User ${username} bought ${chrono.type}`, 0)
 
     } else {
 
@@ -223,7 +236,15 @@ exports.claimchrono = async (req, res) => {
         }
 
         // Step 3: Calculate Earnings
-        const earnings = (chronoinventorydata.price * chronoinventorydata.profit) + chronoinventorydata.price;
+
+        let earnings = 0;
+
+        if (chronoinventorydata.promo == "Regular" || chronoinventorydata.promo == "Double Time"){
+            earnings = (chronoinventorydata.price * chronoinventorydata.profit) + chronoinventorydata.price;
+        }
+        else{
+            earnings = chronoinventorydata.price * chronoinventorydata.profit;
+        }
 
         // Step 4: Update Wallets (Ensure These Functions Support Transactions)
         await addwallet("chronocoinwallet", earnings, id, session);
