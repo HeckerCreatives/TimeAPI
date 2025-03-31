@@ -32,7 +32,11 @@ const inventoryShema = new mongoose.Schema(
         isb1t1: {
             type: Boolean,
             default: false
-        }
+        },
+        promo: {
+            type: String,
+            index: true
+        },
     },
     {
         timestamps: true
