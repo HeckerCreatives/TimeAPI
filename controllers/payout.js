@@ -30,7 +30,7 @@ exports.requestpayout = async (req, res) => {
     const maintenances = await Maintenance.findOne({ type: "payout" }).then((data) => data);
 
      if (maintenances.value == "1") {
-         return res.status(400).json({ message: "failed", data: "Cashout is available only in " });
+         return res.status(400).json({ message: "failed", data: "Request payout is only available during friday." });
      }
 
     const exist = await Payout.find({

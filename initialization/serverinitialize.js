@@ -84,10 +84,19 @@ exports.initialize = async (req, res) => {
         return
     })
 
-    const mainte = [{ insertOne: { type: "b1t1", value: "0" }},  { insertOne: { type: "payout", value: "1" } }]
-
-    if (maintenances.length <= 0){
-        await Maintenance.bulkWrite(mainte)
+        const mainte = [
+            { type: "b1t1", value: "0" },
+            { type: "payout", value: "1" },
+            { type: "deposit", value: "1" },
+            { type: "full", value: "1" }
+        ];
+        
+    if (maintenances.length <= 0) {
+        await Maintenance.insertMany(mainte)
+            .catch(err => {
+                console.log(`There's a problem creating maintenance data: ${err}`);
+                return;
+            });
     }
 
     const Chronos = await Chrono.find()

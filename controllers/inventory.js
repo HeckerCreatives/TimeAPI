@@ -75,8 +75,9 @@ exports.buychrono = async (req, res) => {
     if(chrono.isBuyonetakeone == '1'){
 
         const totalprofitb1t1 = (totalprofit * 2) + pricechrono
+        const timesprofit = totalprofit * 2
 
-        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: 0, price: totalprofitb1t1, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
+        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: timesprofit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
         .catch(err => {
     
             console.log(`Failed to chrono inventory data for ${username} type: ${type} b1t1: true, error: ${err}`)
