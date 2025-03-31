@@ -75,7 +75,7 @@ exports.buychrono = async (req, res) => {
     if(chrono.isBuyonetakeone == '1'){
 
         const totalprofitb1t1 = (totalprofit * 2) + pricechrono
-        const timesprofit = totalprofit * 2
+        const timesprofit = chrono * 2
 
         await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: timesprofit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
         .catch(err => {
@@ -88,18 +88,6 @@ exports.buychrono = async (req, res) => {
 
         await addanalytics(id, inventoryhistory.data.transactionid, `Buy ${chrono.name} buy one take one`, `User ${username} bought ${chrono.type}`, pricechrono)
 
-        // use new profit for the second chrono
-        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: 0, price: 0, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Free'})
-        .catch(err => {
-    
-            console.log(`Failed to chrono inventory data for ${username} type: ${type} b1t1: true, error: ${err}`)
-    
-            return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
-        })
-        const inventoryhistory1 = await saveinventoryhistory(id, chrono.type, 0, `Buy ${chrono.name} buy one take one`)
-
-        await addanalytics(id, inventoryhistory1.data.transactionid, `Buy ${chrono.name} buy one take one`, `User ${username} bought ${chrono.type}`, 0)
-    
     } else {
 
         await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: false, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: finalprice, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Regular'})
