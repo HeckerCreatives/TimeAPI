@@ -90,7 +90,7 @@ exports.buychrono = async (req, res) => {
         await addanalytics(id, inventoryhistory.data.transactionid, `Buy ${chrono.name} buy one take one`, `User ${username} bought ${chrono.type}`, pricechrono)
 
         //  PROFIT
-        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: chrono.profit, price: pricechrono * chrono.profit , startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Free'})
+        await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: chrono.profit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Free'})
         .catch(err => {
     
             console.log(`Failed to chrono inventory data for ${username} type: ${type} b1t1: true, error: ${err}`)
