@@ -75,7 +75,7 @@ exports.buychrono = async (req, res) => {
     if(chrono.isBuyonetakeone == '1'){
 
         const totalprofitb1t1 = (totalprofit * 2) + pricechrono
-        const timesprofit = chrono * 2
+        const timesprofit = chrono.profit * 2
 
         await Inventory.create({owner: new mongoose.Types.ObjectId(id), isb1t1: true, type: chrono.type, expiration: DateTimeServerExpiration(chrono.duration), profit: timesprofit, price: pricechrono, startdate: DateTimeServer(), name: chrono.name, duration: chrono.duration, promo: 'Double Time'})
         .catch(err => {
