@@ -114,7 +114,8 @@ exports.initialize = async (req, res) => {
                     profit: 0.10,
                     duration: 5,
                     min: 500,
-                    max: 5000
+                    max: 5000,
+                    isBuyonetakeone: 0
             },
             {
                     type: "patek_philippe_ai_bot",
@@ -122,7 +123,8 @@ exports.initialize = async (req, res) => {
                     profit: 0.25,
                     duration: 10,
                     min: 1000,
-                    max: 10000
+                    max: 10000,
+                    isBuyonetakeone: 0
             },
             {
                     type: "audemars_piguet_ai_bot",
@@ -130,7 +132,8 @@ exports.initialize = async (req, res) => {
                     profit: 0.60,
                     duration: 20,
                     min: 2000,
-                    max: 20000
+                    max: 20000,
+                    isBuyonetakeone: 0
             }
         ];
 
