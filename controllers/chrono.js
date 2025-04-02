@@ -89,18 +89,55 @@ exports.getUserChrono = async (req, res) => {
             });
 
             if (rolexBots.length < 1) {
-                value = false;
+                value = true; 
             }
         } 
-        else if (type === "patek_philippe_ai_bot" || type === "audemars_piguet_ai_bot") {
-            const userBots = await Inventoryhistory.find({
+
+        else if (type === "patek_philippe_ai_bot") {
+            const rolexBots = await Inventoryhistory.find({
                 owner: new mongoose.Types.ObjectId(id),
-                chronotype: type,
+                chronotype: "rolex_ai_bot",
                 type: "Buy"
             });
 
-            if (userBots.length < 1) {
-                value = true;
+            if (rolexBots.length > 0) {
+                const patekBots = await Inventoryhistory.find({
+                    owner: new mongoose.Types.ObjectId(id),
+                    chronotype: "patek_philippe_ai_bot",
+                    type: "Buy"
+                });
+
+                if (patekBots.length < 1) {
+                    value = true;
+                }
+            }
+        }
+
+        else if (type === "audemars_piguet_ai_bot") {
+            const rolexBots = await Inventoryhistory.find({
+                owner: new mongoose.Types.ObjectId(id),
+                chronotype: "rolex_ai_bot",
+                type: "Buy"
+            });
+
+            if (rolexBots.length > 0) {
+                const patekBots = await Inventoryhistory.find({
+                    owner: new mongoose.Types.ObjectId(id),
+                    chronotype: "patek_philippe_ai_bot",
+                    type: "Buy"
+                });
+
+                if (patekBots.length > 0) {
+                    const audemarsBots = await Inventoryhistory.find({
+                        owner: new mongoose.Types.ObjectId(id),
+                        chronotype: "audemars_piguet_ai_bot",
+                        type: "Buy"
+                    });
+
+                    if (audemarsBots.length < 1) {
+                        value = true;
+                    }
+                }
             }
         }
 
@@ -111,6 +148,7 @@ exports.getUserChrono = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 
 exports.editchrono = async (req, res) => {
