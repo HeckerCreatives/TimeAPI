@@ -346,6 +346,7 @@ exports.searchadminlist = async (req, res) => {
         return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
     })
 
+    console.log(adminlist)
     const totalPages = await Staffusers.countDocuments(adminlistsearch)
     .then(data => data)
     .catch(err => {

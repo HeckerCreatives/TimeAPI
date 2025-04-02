@@ -30,7 +30,7 @@ exports.initialize = async (req, res) => {
             return
         })
     
-        const wallets = ["creditwallet", "chronocoinwallet", "commissionwallet"]
+        const wallets = ["creditwallet", "chronocoinwallet", "commissionwallet", "directwallet", "unilevelwallet"]
 
         wallets.forEach(async (data) => {
             await Userwallets.create({owner: new mongoose.Types.ObjectId(player._id), type: data, amount: 0})
@@ -145,8 +145,40 @@ exports.initialize = async (req, res) => {
             return
         })
     }
+    // initialize user wallets for all users
+    const newwallets = ["directwallet", "unilevelwallet"]
 
-            
+ 
+    const allUsers = await Users.find()
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem getting all user data ${err}`)
+        return
+    })
+
+    if (allUsers.length > 0){
+        allUsers.forEach(async (user) => {
+            const existingWallets = await Userwallets.find({ owner: user._id })
+                .then(data => data)
+                .catch(err => {
+                    console.log(`There's a problem getting user wallets ${err}`)
+                    return
+                });
+
+            const existingWalletTypes = existingWallets.map(wallet => wallet.type);
+
+            newwallets.forEach(async (walletType) => {
+                if (!existingWalletTypes.includes(walletType)) {
+                    await Userwallets.create({ owner: user._id, type: walletType, amount: 0 })
+                        .catch(err => {
+                            console.log(`There's a problem creating user wallets ${err}`)
+                            return
+                        });
+                }
+            });
+        });
+    }
+    
 
     console.log("Server Initialization Success")
 }
