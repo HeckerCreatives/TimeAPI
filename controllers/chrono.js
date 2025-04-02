@@ -89,7 +89,7 @@ exports.getUserChrono = async (req, res) => {
             });
 
             if (rolexBots.length < 1) {
-                value = true; 
+                value = false; 
             }
         } 
 
