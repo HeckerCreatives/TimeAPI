@@ -58,4 +58,37 @@ exports.getplayerwalletforadmin = async (req, res) => {
     return res.json({message: "success", data: data})
 }
 
+exports.editplayerwalletforadmin = async (req, res) => {
+    const {id, username} = req.user
+    const {playerid, type, amount} = req.body
+
+    const playerwallet = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(playerid), type: type})
+    .then(data => data)
+    .catch(err => {
+
+        console.log(`There's a problem getting user wallet for ${username}, player: ${playerid}, Error: ${err}`)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    })
+
+
+    if (!playerwallet) {
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    }
+
+    if (amount < 0) {
+        return res.status(400).json({ message: "bad-request", data: "You can't set the amount to negative value." })
+    }
+
+    await Userwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(playerid), type: type}, {amount: amount})
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem updating user wallet for ${username}, player: ${playerid}, Error: ${err}`)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    })
+
+    return res.json({message: "success"})
+}
+
 //  #endregion
