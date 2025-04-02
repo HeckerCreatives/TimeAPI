@@ -5,6 +5,8 @@ const Chrono = require("../models/Chrono")
 
 
 exports.getchrono = async(req, res)=> {
+
+    const {id} = req.user
  
     const chronos = await Chrono.find()
     .then(data => data)
@@ -13,9 +15,35 @@ exports.getchrono = async(req, res)=> {
         return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
     })
 
+    const total = await Inventory.countDocuments({owner: new mongoose.Types.ObjectId(id)})
+
+    const history = await Inventoryhistory.find({
+        owner: new mongoose.Types.ObjectId(id),
+        chronotype: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] }
+    }); // Limit to 3 items only
+
+    const purchasedTypes = new Set(history.map(entry => entry.chronotype));
+
     const data = []
 
     chronos.forEach(temp => {
+
+        let isunlock = false;
+        console.log(purchasedTypes.has(temp.type), temp.type)
+        if (temp.type === "rolex_ai_bot") {
+            isunlock = true;
+        }
+        else if (temp.type == "patek_philippe_ai_bot"){
+            if (purchasedTypes.has("rolex_ai_bot")){
+                isunlock = true;
+            }
+        }
+        else if (temp.type == "audemars_piguet_ai_bot"){
+            if (purchasedTypes.has("patek_philippe_ai_bot")){
+                isunlock = true;
+            }
+        }
+
         data.push({
             id: temp._id,
             name: temp.name,
@@ -24,112 +52,51 @@ exports.getchrono = async(req, res)=> {
             max: temp.max,
             duration: temp.duration,
             profit: temp.profit,
-            isBuyonetakeone: temp.isBuyonetakeone
+            isBuyonetakeone: temp.isBuyonetakeone,
+            canbuy: total > 0 ? false : true,
+            isunlock: isunlock
         })
     })
     return res.status(200).json({ message: "success", data: data})
 }
 
-// exports.getUserChrono = async(req, res)=> {
-//     const { id, username } = req.user
-//     const { type } = req.query
+exports.getUserChrono = async(req, res)=> {
+    const { id, username } = req.user
+    const { type } = req.query
 
-//     let value = true
-//     if (type == "rolex_ai_bot"){
-//         const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-//         if(!tempchrono){
-//             value = false
-//         }
-//     }
-
-//     else if (type == "patek_philippe_ai_bot"){
-//         const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-//         const tempchrono1 = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-
-//         if(!tempchrono || !tempchrono1){
-//             value = false
-//         }
-
-//     } 
-//     else if (type == "audemars_piguet_ai_bot"){
-
-//         const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-//         const tempchrono1 = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-//         const tempchrono2 = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "", type: "Buy"})
-//         .then(data => data)
-
-//         if(!tempchrono || !tempchrono1 || !tempchrono2){
-//             value = false
-//         }
-        
-//     }
-
-//     value = true
-
-
-//     return res.status(200).json({ message: "success", data: value})
-// }
-
-exports.getUserChrono = async (req, res) => {
-    const { id, username } = req.user;
-    const { type } = req.query;
-
-    try {
-        let value = true;
-
-        if (type === "rolex_ai_bot") {
-            value = false;
+    let value = true
+    if (type == "rolex_ai_bot"){
+        const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "rolex_ai_bot", type: "Buy"})
+        .then(data => data)
+        if(!tempchrono){
+            value = false
         }
-
-        else if (type === "patek_philippe_ai_bot") {
-            const rolexBots = await Inventory.find({
-                owner: new mongoose.Types.ObjectId(id),
-                type: "rolex_ai_bot",
-            });
-
-            if (rolexBots.length > 0) {
-                value = false;
-            }
-
-        }
-
-        else if (type === "audemars_piguet_ai_bot") {
-            const rolexBots = await Inventory.find({
-                owner: new mongoose.Types.ObjectId(id),
-                type: "rolex_ai_bot",
-            });
-
-            const patekBots = await Inventory.find({
-                owner: new mongoose.Types.ObjectId(id),
-                type: "patek_philippe_ai_bot",
-            });
-
-            console.log(rolexBots, patekBots)
-
-
-            if (rolexBots.length > 0 && patekBots.length > 0) {
-                value = false;
-
-            }
-        }
-
-        return res.status(200).json({ message: "success", data: value });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Internal server error" });
     }
-};
+
+    else if (type == "patek_philippe_ai_bot"){
+        const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "rolex_ai_bot", type: "Buy"})
+        .then(data => data)
+
+        value = tempchrono
+    } 
+    else if (type == "audemars_piguet_ai_bot"){
+
+        const tempchrono = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "rolex_ai_bot", type: "Buy"})
+        .then(data => data)
+        const tempchrono1 = await Inventoryhistory.findOne({owner: new mongoose.Types.ObjectId(id), chronotype: "patek_philippe_ai_bot", type: "Buy"})
+        .then(data => data)
+
+        if(!tempchrono || !tempchrono1){
+            value = false
+        }
+        
+    }
+
+    // value = true
 
 
-
-
-
+    return res.status(200).json({ message: "success", data: value})
+}
 
 exports.editchrono = async (req, res) => {
 

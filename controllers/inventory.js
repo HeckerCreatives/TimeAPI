@@ -193,7 +193,7 @@ exports.getinventory = async (req, res) => {
             promo: promo,
             remainingtime: remainingtime,
             purchasedate: createdAt,
-            maturedate: matureDate.toISOString()       
+            maturedate: matureDate.toISOString()
         }
 
         index++
@@ -447,6 +447,20 @@ exports.getremainingunclaimedchrono = async (req, res) => {
     })
 
     return res.json({message: "success", data: data})
+}
+
+exports.getchronobuystatus = async (req, res) => {
+    const {id} = req.user
+
+    const total = await Inventory.find({owner: new mongoose.Types.ObjectId(id)})
+    
+    let canbuy = true;
+
+    if (total > 0){
+        canbuy = false
+    }
+
+    return res.json({message: "success", data: canbuy})
 }
 
 //  #endregion
