@@ -524,15 +524,11 @@ exports.maxplayerinventorysuperadmin = async (req, res) => {
     
     const {id, username} = req.user
 
-    const {playerid, chronoid} = req.body
+    const { chronoid} = req.body
     
-    if (!mongoose.Types.ObjectId.isValid(playerid)) {
-        return res.status(400).json({ message: 'Invalid user ID' });
-    }
-
     try {    
     
-        const chrono = await Inventory.findOne({ owner: new mongoose.Types.ObjectId(playerid), _id: new mongoose.Types.ObjectId(chronoid) })
+        const chrono = await Inventory.findOne({ _id: new mongoose.Types.ObjectId(chronoid) })
         .then(data => data)
         chrono.duration = 0.0007
 
