@@ -489,7 +489,8 @@ exports.getplayerinventoryforsuperadmin = async (req, res) => {
         const {_id, type, price, profit, duration, startdate, createdAt} = datachrono
 
         const earnings = getfarm(startdate, AddUnixtimeDay(startdate, duration), (price * profit) + price)
-        const remainingtime = RemainingTime(parseFloat(startdate), AddUnixtimeDay(startdate, duration))
+        // const remainingtime = RemainingTime(parseFloat(startdate), AddUnixtimeDay(startdate, duration))
+        const remainingtime = RemainingTime(parseFloat(startdate), duration)
 
         data.inventory[index] = {
             chronoid: _id,
