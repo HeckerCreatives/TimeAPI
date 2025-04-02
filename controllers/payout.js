@@ -13,9 +13,6 @@ exports.requestpayout = async (req, res) => {
     const { id, username } = req.user;
     const { type, payoutvalue, paymentmethod, accountname, accountnumber } = req.body;
 
-    if (payoutvalue < 500) {
-        return res.status(400).json({ message: "failed", data: "Minimum cashout is ₱500" });
-    }
 
     if (paymentmethod.toLowerCase() === "gcash" && payoutvalue > 5000) {
         return res.status(400).json({ message: "failed", data: "Gcash pay out maximum value is ₱5000." });
@@ -26,8 +23,8 @@ exports.requestpayout = async (req, res) => {
         return res.status(400).json({ message: "failed", data: "GoTyme pay out minimum value is ₱0." });
     }
 
-    if (paymentmethod.toLowerCase() === "cimb" && payoutvalue < 0) {
-        return res.status(400).json({ message: "failed", data: "CIMB pay out minimum value is ₱0." });
+    if (paymentmethod.toLowerCase() === "cimb" && payoutvalue > 5000) {
+        return res.status(400).json({ message: "failed", data: "CIMB pay out maximum value is ₱5000." });
     }
 
 
@@ -152,9 +149,10 @@ exports.getrequesthistoryplayer = async (req, res) => {
         data.history.push({
             date: createdAt,
             grossamount: value,
-            withdrawalfee: value * 0.10,
-            netammount: value - (value * 0.10),
-            status: status == "processing" ? "In review" : status == "done" ? `Approved (${FormatDate(updatedAt)})` : `Rejected (${FormatDate(updatedAt)})`
+            withdrawalfee: type == "chronocoinwallet" ? 0 : value * 0.10,
+            netammount: type == "chronocoinwallet" ? value : value - (value * 0.10),
+            status: status == "processing" ? "In review" : status == "done" ? `Approved (${FormatDate(updatedAt)})` : `Rejected (${FormatDate(updatedAt)})`,
+            type: type
         })
     })
 

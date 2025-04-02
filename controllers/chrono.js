@@ -29,7 +29,7 @@ exports.getchrono = async(req, res)=> {
     chronos.forEach(temp => {
 
         let isunlock = false;
-        console.log(purchasedTypes.has(temp.type), temp.type)
+        
         if (temp.type === "rolex_ai_bot") {
             isunlock = true;
         }
