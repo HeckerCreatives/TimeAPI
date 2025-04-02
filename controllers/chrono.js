@@ -82,15 +82,7 @@ exports.getUserChrono = async (req, res) => {
         let value = false;
 
         if (type === "rolex_ai_bot") {
-            const rolexBots = await Inventoryhistory.find({
-                owner: new mongoose.Types.ObjectId(id),
-                chronotype: "rolex_ai_bot",
-                type: "Buy"
-            });
-
-            if (rolexBots.length < 1) {
-                value = false; 
-            }
+            value = false; 
         } 
 
         else if (type === "patek_philippe_ai_bot") {
