@@ -13,7 +13,7 @@ const Chrono = require("../models/Chrono")
 
 exports.buychrono = async (req, res) => {
     const {id, username} = req.user
-    const {type, pricechrono } = req.body
+    const {type, pricechrono, skip } = req.body
     let adjustedProfit = 1
 
 
@@ -56,7 +56,13 @@ exports.buychrono = async (req, res) => {
         return res.status(400).json({ message: 'failed', data: `The maximum price for ${chrono.type} is ${chrono.max} pesos`})
     }
 
-    const finalprice = chrono.profit * adjustedProfit
+    let finalprice = 0
+
+    if (skip === true) {
+        finalprice = chrono.profit * 0.5;
+    } else {
+        finalprice = chrono.profit * adjustedProfit;
+    }
 
     const buy = await reducewallet("creditwallet", pricechrono, id)
 

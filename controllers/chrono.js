@@ -79,7 +79,7 @@ exports.getUserChrono = async (req, res) => {
     const { type } = req.query;
 
     try {
-        let value = true;
+        let value = false;
 
         if (type === "rolex_ai_bot") {
             const rolexBots = await Inventoryhistory.find({
@@ -89,7 +89,7 @@ exports.getUserChrono = async (req, res) => {
             });
 
             if (rolexBots.length < 1) {
-                value = true;
+                value = false;
             }
         } 
         else if (type === "patek_philippe_ai_bot" || type === "audemars_piguet_ai_bot") {
@@ -100,7 +100,7 @@ exports.getUserChrono = async (req, res) => {
             });
 
             if (userBots.length < 1) {
-                value = false;
+                value = true;
             }
         }
 
