@@ -26,6 +26,10 @@ exports.requestpayout = async (req, res) => {
         return res.status(400).json({ message: "failed", data: "GoTyme pay out minimum value is ₱0." });
     }
 
+    if (paymentmethod.toLowerCase() === "cimb" && payoutvalue < 0) {
+        return res.status(400).json({ message: "failed", data: "CIMB pay out minimum value is ₱0." });
+    }
+
 
     const maintenances = await Maintenance.findOne({ type: "payout" }).then((data) => data);
 
@@ -57,7 +61,7 @@ exports.requestpayout = async (req, res) => {
         });
 
     if (payoutvalue > wallet.amount) {
-        return res.status(400).json({
+        return res.status(400).json({ 
             message: "failed",
             data: "The amount is greater than your wallet balance"
         });
@@ -491,15 +495,17 @@ exports.processpayout = async (req, res) => {
     }
     else{
 
-        const adminfee = payoutvalue * 0.1
+        if (payoutdata.type == "commissionwallet"){
 
-        await StaffUserwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(id)}, {$inc: {amount: adminfee}})
+            const adminfee = payoutvalue * 0.1
 
-        const analyticsadd = await addanalytics(playerid, "", `payout${wallettype}`, `Payout to user ${playerid} with a value of ${payoutvalue} and admin fee of ${adminfee} processed by ${username}`, payoutvalue)
-
-        if (analyticsadd != "success"){
-            return res.status(400).json({ message: 'failed', data: `There's a problem saving payin in analytics history. Please contact customer support for more details` })
+            await StaffUserwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(id)}, {$inc: {amount: adminfee}})           
         }
+        const analyticsadd = await addanalytics(playerid, "", `payout${wallettype}`, `Payout to user ${playerid} with a value of ${payoutvalue} and admin fee of ${adminfee} processed by ${username}`, payoutvalue)
+            
+            if (analyticsadd != "success"){
+                return res.status(400).json({ message: 'failed', data: `There's a problem saving payin in analytics history. Please contact customer support for more details` })
+            }
     }
 
     return res.json({message: "success"})
