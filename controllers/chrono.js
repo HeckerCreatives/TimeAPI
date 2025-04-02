@@ -1,5 +1,6 @@
 const { default: mongoose } = require("mongoose")
 const Inventoryhistory = require("../models/Inventoryhistory")
+const Inventory = require("../models/Inventory")
 const Chrono = require("../models/Chrono")
 
 
@@ -79,57 +80,41 @@ exports.getUserChrono = async (req, res) => {
     const { type } = req.query;
 
     try {
-        let value = false;
+        let value = true;
 
         if (type === "rolex_ai_bot") {
-            value = false; 
-        } 
+            value = false;
+        }
 
         else if (type === "patek_philippe_ai_bot") {
-            const rolexBots = await Inventoryhistory.find({
+            const rolexBots = await Inventory.find({
                 owner: new mongoose.Types.ObjectId(id),
-                chronotype: "rolex_ai_bot",
-                type: "Buy"
+                type: "rolex_ai_bot",
             });
 
             if (rolexBots.length > 0) {
-                const patekBots = await Inventoryhistory.find({
-                    owner: new mongoose.Types.ObjectId(id),
-                    chronotype: "patek_philippe_ai_bot",
-                    type: "Buy"
-                });
-
-                if (patekBots.length < 1) {
-                    value = true;
-                }
+                value = false;
             }
+
         }
 
         else if (type === "audemars_piguet_ai_bot") {
-            const rolexBots = await Inventoryhistory.find({
+            const rolexBots = await Inventory.find({
                 owner: new mongoose.Types.ObjectId(id),
-                chronotype: "rolex_ai_bot",
-                type: "Buy"
+                type: "rolex_ai_bot",
             });
 
-            if (rolexBots.length > 0) {
-                const patekBots = await Inventoryhistory.find({
-                    owner: new mongoose.Types.ObjectId(id),
-                    chronotype: "patek_philippe_ai_bot",
-                    type: "Buy"
-                });
+            const patekBots = await Inventory.find({
+                owner: new mongoose.Types.ObjectId(id),
+                type: "patek_philippe_ai_bot",
+            });
 
-                if (patekBots.length > 0) {
-                    const audemarsBots = await Inventoryhistory.find({
-                        owner: new mongoose.Types.ObjectId(id),
-                        chronotype: "audemars_piguet_ai_bot",
-                        type: "Buy"
-                    });
+            console.log(rolexBots, patekBots)
 
-                    if (audemarsBots.length < 1) {
-                        value = true;
-                    }
-                }
+
+            if (rolexBots.length > 0 && patekBots.length > 0) {
+                value = false;
+
             }
         }
 
@@ -140,6 +125,9 @@ exports.getUserChrono = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
+
+
+
 
 
 
