@@ -1,9 +1,10 @@
 const router = require("express").Router()
-const { playerwallethistory, getwallettotalearnings } = require("../controllers/wallethistory")
-const { protectplayer, protectsuperadmin } = require("../middleware/middleware")
+const { playerwallethistory, getwallettotalearnings, getwallettotalearningsforadmin } = require("../controllers/wallethistory")
+const { protectplayer, protectsuperadmin, protectadmin } = require("../middleware/middleware")
 
 router
     .get("/userwallethistory", protectplayer, playerwallethistory)
     .get("/getwallettotalearnings", protectplayer, getwallettotalearnings)
+    .get("/getwallettotalearningsforadmin", protectadmin, getwallettotalearningsforadmin)
 
 module.exports = router;

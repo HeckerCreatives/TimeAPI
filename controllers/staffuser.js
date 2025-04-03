@@ -72,7 +72,7 @@ exports.getsadashboard = async(req, res) => {
     
     data["companycommission"] = commissioned
 
-    const usercount = await Users.countDocuments({username: { $ne: "minergod"}})
+    const usercount = await Users.countDocuments({username: { $ne: "chronogod"}})
     .then(data => data)
     .catch(err => {
 
