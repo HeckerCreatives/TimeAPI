@@ -2,7 +2,6 @@ const { default: mongoose } = require("mongoose")
 const Inventoryhistory = require("../models/Inventoryhistory")
 const Inventory = require("../models/Inventory")
 const Chrono = require("../models/Chrono")
-const Inventory = require("../models/Inventory")
 
 
 exports.getchrono = async(req, res)=> {
