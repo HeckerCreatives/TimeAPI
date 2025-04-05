@@ -47,6 +47,35 @@ exports.buychrono = async (req, res) => {
         return res.status(400).json({message: "bad-request", data: "There's a problem with the server! Please contact customer support."})
     })
 
+    const purchased = await Inventory.find({
+        owner: new mongoose.Types.ObjectId(id),
+        type: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] }
+    })
+
+    const totalpurchased = purchased.reduce((acc, entry) => {
+        acc[entry.type] = (acc[entry.type] || 0) + entry.price;
+        return acc;
+    }, {});
+
+
+    if (type == "rolex_ai_bot"){
+        const totalleft = chrono.max - totalpurchased["rolex_ai_bot"]
+        if (pricechrono > totalleft){
+            return res.status(400).json({ message: 'failed', data: `You can only buy ${totalleft} more of ${chrono.type}`})
+        }
+    } else if (type == "patek_philippe_ai_bot"){
+        const totalleft = chrono.max - totalpurchased["patek_philippe_ai_bot"]
+        if (pricechrono > totalleft){
+            return res.status(400).json({ message: 'failed', data: `You can only buy ${totalleft} more of ${chrono.type}`})
+        }
+    } else if (type == "audemars_piguet_ai_bot"){
+        const totalleft = chrono.max - totalpurchased["audemars_piguet_ai_bot"]
+        if (pricechrono > totalleft){
+            return res.status(400).json({ message: 'failed', data: `You can only buy ${totalleft} more of ${chrono.type}`})
+        }
+    }
+
+
     
     if (pricechrono < chrono.min){
         return res.status(400).json({ message: 'failed', data: `The minimum price for ${chrono.type} is ${chrono.min} pesos`})

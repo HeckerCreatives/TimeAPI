@@ -37,7 +37,7 @@ exports.getchrono = async(req, res)=> {
     const data = []
 
     chronos.forEach(temp => {
-
+        let canbuy = false;
         let isunlock = false;
         let totalleft = temp.max;
         
@@ -66,6 +66,9 @@ exports.getchrono = async(req, res)=> {
             }
         }
 
+        if (totalleft > 0){
+            canbuy = true;
+        }
         data.push({
             id: temp._id,
             name: temp.name,
@@ -75,6 +78,7 @@ exports.getchrono = async(req, res)=> {
             duration: temp.duration,
             profit: temp.profit,
             isBuyonetakeone: temp.isBuyonetakeone,
+            canbuy: canbuy,
             isunlock: isunlock,
             totalleft: totalleft
         })
