@@ -5,6 +5,6 @@ const { protectplayer, protectsuperadmin, protectadmin } = require("../middlewar
 router
     .get("/userwallethistory", protectplayer, playerwallethistory)
     .get("/getwallettotalearnings", protectplayer, getwallettotalearnings)
-    .get("/getwallettotalearningsforadmin", protectadmin, getwallettotalearningsforadmin)
+    .get("/getwallettotalearningsforadmin", protectsuperadmin, getwallettotalearningsforadmin)
 
 module.exports = router;
