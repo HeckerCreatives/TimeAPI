@@ -15,12 +15,22 @@ exports.getchrono = async(req, res)=> {
         return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
     })
 
-    const total = await Inventory.countDocuments({owner: new mongoose.Types.ObjectId(id)})
 
     const history = await Inventoryhistory.find({
         owner: new mongoose.Types.ObjectId(id),
         chronotype: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] }
     }); // Limit to 3 items only
+
+
+    const purchased = await Inventory.find({
+        owner: new mongoose.Types.ObjectId(id),
+        type: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] }
+    })
+
+    const totalpurchased = purchased.reduce((acc, entry) => {
+        acc[entry.type] = (acc[entry.type] || 0) + entry.price;
+        return acc;
+    }, {});
 
     const purchasedTypes = new Set(history.map(entry => entry.chronotype));
 
@@ -29,18 +39,30 @@ exports.getchrono = async(req, res)=> {
     chronos.forEach(temp => {
 
         let isunlock = false;
+        let totalleft = temp.max;
         
         if (temp.type === "rolex_ai_bot") {
             isunlock = true;
+            if (totalpurchased["rolex_ai_bot"]){
+                totalleft = temp.max - totalpurchased["rolex_ai_bot"]
+            }
         }
         else if (temp.type == "patek_philippe_ai_bot"){
             if (purchasedTypes.has("rolex_ai_bot")){
                 isunlock = true;
             }
+
+            if (totalpurchased["patek_philippe_ai_bot"]){
+                totalleft = temp.max - totalpurchased["patek_philippe_ai_bot"]
+            }
+
         }
         else if (temp.type == "audemars_piguet_ai_bot"){
             if (purchasedTypes.has("patek_philippe_ai_bot")){
                 isunlock = true;
+            }
+            if (totalpurchased["audemars_piguet_ai_bot"]){
+                totalleft = temp.max - totalpurchased["audemars_piguet_ai_bot"]
             }
         }
 
@@ -53,8 +75,8 @@ exports.getchrono = async(req, res)=> {
             duration: temp.duration,
             profit: temp.profit,
             isBuyonetakeone: temp.isBuyonetakeone,
-            canbuy: total > 0 ? false : true,
-            isunlock: isunlock
+            isunlock: isunlock,
+            totalleft: totalleft
         })
     })
     return res.status(200).json({ message: "success", data: data})
