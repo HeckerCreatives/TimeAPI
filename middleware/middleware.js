@@ -105,8 +105,11 @@ exports.protectadmin = async (req, res, next) => {
     try{
         const decodedToken = await verifyJWT(token);
 
-        if (decodedToken.auth != "admin" || decodedToken.auth != "superadmin"){
-            return res.status(401).json({ message: 'Unauthorized', data: "You are not authorized to view this page. Please login the right account to view the page." });
+        if (decodedToken.auth !== "admin" && decodedToken.auth !== "superadmin") {
+            return res.status(401).json({ 
+                message: 'Unauthorized', 
+                data: "You are not authorized to view this page. Please login the right account to view the page." 
+            });
         }
 
         const user = await Staffusers.findOne({username: decodedToken.username})
