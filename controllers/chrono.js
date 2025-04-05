@@ -24,7 +24,8 @@ exports.getchrono = async(req, res)=> {
 
     const purchased = await Inventory.find({
         owner: new mongoose.Types.ObjectId(id),
-        type: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] }
+        type: { $in: ["rolex_ai_bot", "patek_philippe_ai_bot", "audemars_piguet_ai_bot"] },
+        promo: { $ne: "Free" }
     })
 
     const totalpurchased = purchased.reduce((acc, entry) => {
