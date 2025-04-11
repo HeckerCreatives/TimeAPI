@@ -299,8 +299,8 @@ exports.getpayoutlist = async (req, res) => {
                 accountnumber: accountnumber,
                 accountname: accountname,
                 grossamount: value,
-                withdrawalfee: value * 0.10,
-                netamount: value - (value * 0.10),
+                withdrawalfee: type !== "commissionwallet" ? 0 : value * 0.10,
+                netamount: type !== "commissionwallet" ? value : value - (value * 0.10),
                 status: status == "processing" ? "In Review" : status,
                 type: type,
                 createdAt: createdAt,
@@ -433,8 +433,8 @@ exports.getpayouthistorysuperadmin = async (req, res) => {
                 accountnumber: accountnumber,
                 accountname: accountname,
                 grossamount: value,
-                withdrawalfee: value * 0.10,
-                netamount: value - (value * 0.10),
+                withdrawalfee: type !== "commissionwallet" ? 0 : value * 0.10,
+                netamount: type !== "commissionwallet" ? value : value - (value * 0.10),
                 status: status == "processing" ? "In Review" : status,
                 type: type,
                 phonenumber: phonenumber
@@ -498,10 +498,16 @@ exports.processpayout = async (req, res) => {
             const adminfee = payoutvalue * 0.1
 
             await StaffUserwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(id)}, {$inc: {amount: adminfee}})           
+            const analyticsadd = await addanalytics(playerid, "", `payout${wallettype}`, `Payout to user ${playerid} with a value of ${payoutvalue} and admin fee of ${adminfee} processed by ${username}`, payoutvalue)
+                
+                if (analyticsadd != "success"){
+                    return res.status(400).json({ message: 'failed', data: `There's a problem saving payin in analytics history. Please contact customer support for more details` })
+                }
         }
-        const analyticsadd = await addanalytics(playerid, "", `payout${wallettype}`, `Payout to user ${playerid} with a value of ${payoutvalue} and admin fee of ${adminfee} processed by ${username}`, payoutvalue)
+
+            const analyticsadd1 = await addanalytics(playerid, "", `payout${wallettype}`, `Payout to user ${playerid} with a value of ${payoutvalue}. processed by ${username}`, payoutvalue)
             
-            if (analyticsadd != "success"){
+            if (analyticsadd1 != "success"){
                 return res.status(400).json({ message: 'failed', data: `There's a problem saving payin in analytics history. Please contact customer support for more details` })
             }
     }
