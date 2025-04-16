@@ -369,9 +369,10 @@ exports.getuserdetailsbysuperadmin = async (req, res) => {
     .then(data => data)
     .catch(err => err)
 
+    console.log(userdetails)
     const data = {
         username: userdetails.username,
-        referral: userdetails.referral.username,
+        referral: userdetails.referral?.username || "N/A",
         banstatus: userdetails.status
     }
 

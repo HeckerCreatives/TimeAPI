@@ -62,6 +62,7 @@ exports.editplayerwalletforadmin = async (req, res) => {
     const {id, username} = req.user
     const {playerid, type, amount} = req.body
 
+    
     const playerwallet = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(playerid), type: type})
     .then(data => data)
     .catch(err => {
@@ -75,6 +76,9 @@ exports.editplayerwalletforadmin = async (req, res) => {
     if (!playerwallet) {
         return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
     }
+    if (type === "commissionwallet") {
+        return res.status(400).json({ message: "bad-request", data: "You can't edit commission wallet." })
+    }
 
     if (amount < 0) {
         return res.status(400).json({ message: "bad-request", data: "You can't set the amount to negative value." })
@@ -87,6 +91,38 @@ exports.editplayerwalletforadmin = async (req, res) => {
 
         return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
     })
+
+    // get commision wallet and always set it to unilevel wallet + direct wallet
+
+    const playercommision = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(playerid), type: "commissionwallet"})
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem getting user wallet for ${username}, player: ${playerid}, Error: ${err}`)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    })
+    const playerunilevel = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(playerid), type: "unilevelwallet"})
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem getting user wallet for ${username}, player: ${playerid}, Error: ${err}`)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    })
+    const playerdirect = await Userwallets.findOne({owner: new mongoose.Types.ObjectId(playerid), type: "directwallet"})
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem getting user wallet for ${username}, player: ${playerid}, Error: ${err}`)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem getting your user details. Please contact customer support." })
+    })
+
+    const playerunilevelamount = playerunilevel.amount
+    const playerdirectamount = playerdirect.amount
+    
+    const playercommisionamount = playerunilevelamount + playerdirectamount
+
+    playercommision.amount = playercommisionamount
+    await playercommision.save()
 
     return res.json({message: "success"})
 }
