@@ -57,16 +57,40 @@ exports.requestpayout = async (req, res) => {
             });
         });
 
-    if (payoutvalue > wallet.amount) {
-        return res.status(400).json({ 
+    const unilevelwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "unilevelwallet" })
+        .then((data) => data)
+        .catch((err) => {
+            console.log(`There's a problem getting unilevel wallet data ${err}`);
+            return res.status(400).json({
+                message: "bad-request",
+                data: "There's a problem with the server! Please contact customer support for more details."
+            });
+        });
+
+    const directwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "directwallet" })
+        .then((data) => data)
+        .catch((err) => {
+            console.log(`There's a problem getting direct wallet data ${err}`);
+            return res.status(400).json({
+                message: "bad-request", 
+                data: "There's a problem with the server! Please contact customer support for more details."
+            });
+        });
+
+    const totalBalance = unilevelwallet.amount + directwallet.amount;
+
+    if (payoutvalue > totalBalance) {
+        return res.status(400).json({
             message: "failed",
-            data: "The amount is greater than your wallet balance"
+            data: "The amount is greater than your combined wallet balance"
         });
     }
 
+    const balanceleft = totalBalance - payoutvalue
+
     await Userwallets.findOneAndUpdate(
         { owner: new mongoose.Types.ObjectId(id), type: type },
-        { $inc: { amount: -payoutvalue } }
+        { $set: { amount: balanceleft } }
     ).catch((err) => {
         console.log(`There's a problem deducting payout value for ${username} with value ${payoutvalue}. Error: ${err}`);
         return res.status(400).json({
@@ -74,28 +98,6 @@ exports.requestpayout = async (req, res) => {
             data: "There's a problem with the server! Please contact customer support for more details."
         });
     });
-
-    // get the unilevel and direct  wallet and deduct the amount from it
-
-    const unilevelwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "unilevelwallet" })
-        .then((data) => data)
-        .catch((err) => {
-            console.log(`There's a problem getting leaderboard data ${err}`);
-            return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
-            });
-        });
-    
-    const directwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "directwallet" })
-        .then((data) => data)
-        .catch((err) => {
-            console.log(`There's a problem getting leaderboard data ${err}`);
-            return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
-            });
-        });
 
     if (payoutvalue > directwallet.amount) {
         const deductamount =  payoutvalue - directwallet.amount
