@@ -337,7 +337,6 @@ exports.getpayoutlist = async (req, res) => {
     try {
         const payoutlistResult = await Payout.aggregate(payoutpipelinelist);
 
-        console.log(payoutlistResult[0].data)
 
         const totalPages = payoutlistResult[0].totalPages[0]?.count || 0;
         const pages = Math.ceil(totalPages / pageOptions.limit);
@@ -470,7 +469,6 @@ exports.getpayouthistorysuperadmin = async (req, res) => {
     try {
         const payoutlistResult = await Payout.aggregate(payoutpipelinelist);
 
-        console.log(payoutlistResult)
 
         const totalPages = payoutlistResult[0].totalPages[0]?.count || 0;
         const pages = Math.ceil(totalPages / pageOptions.limit);
@@ -552,6 +550,14 @@ exports.processpayout = async (req, res) => {
     
             return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
         })
+
+        await Userwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(playerid), type: "directwallet"}, {$inc: {amount: payoutvalue}})
+        .catch(err => {
+
+            console.log(`Failed to process Payout data for ${username}, player: ${playerid}, payinid: ${payinid} error: ${err}`)
+    
+            return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        })
     }
     else{
 
@@ -604,15 +610,28 @@ exports.deletepayout = async (req, res) => {
         return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
     })
 
-    console.log(`Payout request id: ${payoutdata._id}  owner: ${payoutdata.owner}  type: ${payoutdata.type}  amount: ${payoutdata.value}`)
+    console.log(`Payout request id: ${payoutdata._id}  owner: ${payoutdata.owner}  type: ${payoutdata.type}  amount: ${payoutdata.value} status: ${payoutdata.status} deleted by ${username}`)
 
-    await Userwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(payoutdata.owner), type: payoutdata.type}, {$inc: {amount: payoutdata.value}})
+    if (payoutdata.status === "processing"){
+        await Userwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(payoutdata.owner), type: payoutdata.type}, {$inc: {amount: payoutdata.value}})
     .catch(err => {
 
         console.log(`Failed to update userwallet data for ${payoutdata.owner} with value ${payoutdata.value}, error: ${err}`)
 
         return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
     })
+
+        if(payoutdata.type == "commissionwallet"){
+            await Userwallets.findOneAndUpdate({owner: new mongoose.Types.ObjectId(payoutdata.owner), type: "directwallet"}, {$inc: {amount: payoutdata.value}})
+            .catch(err => {
+
+                console.log(`Failed to update userwallet data for ${payoutdata.owner} with value ${payoutdata.value}, error: ${err}`)
+
+                return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+            })
+        }
+    }
+
 
     return res.json({message: "success"})
 }
