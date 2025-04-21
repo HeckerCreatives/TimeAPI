@@ -76,8 +76,13 @@ exports.requestpayout = async (req, res) => {
                 data: "There's a problem with the server! Please contact customer support for more details."
             });
         });
+    let totalBalance = 0
 
-    const totalBalance = unilevelwallet.amount + directwallet.amount;
+    if(type == "commissionwallet"){
+     totalBalance = unilevelwallet.amount + directwallet.amount;
+    } else if (type == "chronocoinwallet"){
+        totalBalance = wallet.amount
+    }
 
     if (payoutvalue > totalBalance) {
         return res.status(400).json({
@@ -88,6 +93,7 @@ exports.requestpayout = async (req, res) => {
 
     const balanceleft = totalBalance - payoutvalue
 
+    if (type == "commissionwallet") {
     await Userwallets.findOneAndUpdate(
         { owner: new mongoose.Types.ObjectId(id), type: type },
         { $set: { amount: balanceleft } }
@@ -98,20 +104,37 @@ exports.requestpayout = async (req, res) => {
             data: "There's a problem with the server! Please contact customer support for more details."
         });
     });
-
+    
     if (payoutvalue > directwallet.amount) {
         const deductamount =  payoutvalue - directwallet.amount
         
         directwallet.amount = 0
-
+        
         unilevelwallet.amount = unilevelwallet.amount - deductamount
-
+        
         await unilevelwallet.save()
         await directwallet.save()
     } else {
         const deductamount = directwallet.amount - payoutvalue
         directwallet.amount = deductamount
         await directwallet.save()
+    }
+    } else if (type == "chronocoinwallet") {
+        await Userwallets.findOneAndUpdate(
+            { owner: new mongoose.Types.ObjectId(id), type: type },
+            { $inc: { amount: -payoutvalue } }
+        ).catch((err) => {
+            console.log(`There's a problem deducting payout value for ${username} with value ${payoutvalue}. Error: ${err}`);
+            return res.status(400).json({
+                message: "bad-request",
+                data: "There's a problem with the server! Please contact customer support for more details."
+            });
+        });
+    } else {
+        return res.status(400).json({
+            message: "failed",
+            data: "Invalid wallet type."
+        });
     }
 
     await Payout.create({
