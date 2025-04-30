@@ -238,15 +238,26 @@ exports.getplayercount = async (req, res) => {
 
     const activeusers = await Payin.aggregate([
         {
-            $match: { status: "done" } // Filter payins with status "done"
-        },
-        {
-            $group: {
-                _id: "$owner", // Group by user ID (owner)
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "user"
             }
         },
         {
-            $count: "totalUsers" // Count the number of unique users
+            $match: { 
+                status: "done",
+                "user.status": { $ne: "banned" } // Exclude banned users
+            }
+        },
+        {
+            $group: {
+                _id: "$owner",
+            }
+        },
+        {
+            $count: "totalUsers"
         }
     ]);
 
@@ -255,7 +266,7 @@ exports.getplayercount = async (req, res) => {
 
     data = {
         totalusers: totalusers,
-        activeusers: activeusers.length > 0 ? activeusers[0].totalUsers : 0,
+        activeusers: activeusers[0] ? activeusers[0].totalUsers : 0,
         banusers: banusers
     }
 
