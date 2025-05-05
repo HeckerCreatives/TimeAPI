@@ -328,3 +328,35 @@ exports.getwallettotalearningsforadmin = async (req, res) => {
 
     return res.json({message: "success", data: finaldata})
 }
+
+exports.deleteplayerwallethistoryforadmin = async (req, res) => {
+    const { id, username } = req.user;
+    const { historyid } = req.body;
+
+    if (!historyid) {
+        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
+    }
+
+    try {
+        // Fetch the wallet history entry
+        const history = await Wallethistory.findOne({ _id: new mongoose.Types.ObjectId(historyid) });
+        if (!history) {
+            return res.status(400).json({ message: "failed", data: "Wallet history not found." });
+        }
+
+
+        // delete the wallet history entry
+
+        await Wallethistory.findOneAndDelete({ _id: new mongoose.Types.ObjectId(historyid) })
+        .then(data => data)
+        .catch(err => {
+            console.log(`There's a problem encountered while deleting ${historyid} wallet history. Error: ${err}`)
+            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
+        })
+
+        return res.status(200).json({ message: "success" });
+    } catch (err) {
+        console.log(`Failed to delete wallet history for ${username}, history id: ${historyid}, Error: ${err}`);
+        return res.status(500).json({ message: "failed", data: "An error occurred while deleting the wallet history." });
+    }
+};

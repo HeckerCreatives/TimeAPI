@@ -587,3 +587,61 @@ exports.maxplayerinventorysuperadmin = async (req, res) => {
         return res.status(400).json({ message: "bad-request", data: "There's a problem with the server! Please contact customer support."});
     }
 }
+
+exports.deleteplayerinventorysuperadmin = async (req, res) => {
+    const {id, username} = req.user
+
+    const {chronoid} = req.body
+    
+    try {    
+        const chrono = await Inventory.findOne({  _id: new mongoose.Types.ObjectId(chronoid) });
+
+        console.log(chrono)
+        if (!chrono) {
+            return res.status(400).json({ message: 'failed', data: `There's a problem with the server! Please contact customer support.` });
+        }
+
+        const inventoryhistory = await Inventoryhistory.findOne({ 
+            owner: new mongoose.Types.ObjectId(chrono.owner),
+            createdAt: {
+            $gte: new Date(chrono.createdAt.getTime() - 10000), // 3 seconds before
+            $lte: new Date(chrono.createdAt.getTime() + 10000)  // 3 seconds after
+            },
+            chronotype: chrono.type 
+        }).catch(err => {
+            console.log(`Failed to delete inventory history for ${username}, error: ${err}`)
+            return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        })
+
+        if (!inventoryhistory) {
+            return res.status(400).json({ message: 'failed', data: `There's a problem with the server! Please contact customer support.` });
+        }        
+
+        await Inventory.findOneAndDelete({ _id: new mongoose.Types.ObjectId(chronoid) })
+        .then(data => data)
+        .catch(err => {
+            console.log(`There's a problem getting the chrono data for ${username}. Error: ${err}`)
+            
+            return res.status(400).json({message: "bad-request", data: "There's a problem getting the chrono data! Please contact customer support"})
+        })
+
+        await Inventoryhistory.findOneAndDelete({ 
+            owner: new mongoose.Types.ObjectId(chrono.owner),
+            createdAt: {
+            $gte: new Date(chrono.createdAt.getTime() - 10000), // 3 seconds before
+            $lte: new Date(chrono.createdAt.getTime() + 10000)  // 3 seconds after
+            },
+            chronotype: chrono.type 
+        }).catch(err => {
+            console.log(`Failed to delete inventory history for ${username}, error: ${err}`)
+            return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        })
+
+        return res.status(200).json({ message: "success"});
+
+    } catch (error) {
+        console.error(error)
+
+        return res.status(400).json({ message: "bad-request", data: "There's a problem with the server! Please contact customer support."});
+    }
+}

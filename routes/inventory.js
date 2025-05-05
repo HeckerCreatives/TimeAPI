@@ -1,5 +1,5 @@
 const router = require("express").Router()
-const { getinventory, getclaimhistory, getbuyhistory, getplayerinventoryforsuperadmin, buychrono, claimchrono, getremainingunclaimedchrono, maxplayerinventorysuperadmin } = require("../controllers/inventory")
+const { getinventory, getclaimhistory, getbuyhistory, getplayerinventoryforsuperadmin, buychrono, claimchrono, getremainingunclaimedchrono, maxplayerinventorysuperadmin, deleteplayerinventorysuperadmin } = require("../controllers/inventory")
 const { protectplayer, protectsuperadmin } = require("../middleware/middleware")
 
 router
@@ -11,4 +11,6 @@ router
     .post("/buychrono", protectplayer, buychrono)
     .post("/claimchrono", protectplayer, claimchrono)
     .post("/maxplayerinventorysuperadmin", protectsuperadmin, maxplayerinventorysuperadmin)
+    .post("/deleteplayerinventoryforadmin", protectsuperadmin, deleteplayerinventorysuperadmin)
+
 module.exports = router;

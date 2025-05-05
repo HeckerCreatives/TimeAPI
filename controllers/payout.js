@@ -13,11 +13,9 @@ exports.requestpayout = async (req, res) => {
     const { id, username } = req.user;
     const { type, payoutvalue, paymentmethod, accountname, accountnumber } = req.body;
 
-
     if (paymentmethod.toLowerCase() === "gcash" && payoutvalue > 5000) {
         return res.status(400).json({ message: "failed", data: "Gcash pay out maximum value is ₱5000." });
     }
-
 
     if (paymentmethod.toLowerCase() === "gotyme" && payoutvalue < 0) {
         return res.status(400).json({ message: "failed", data: "GoTyme pay out minimum value is ₱0." });
@@ -27,18 +25,16 @@ exports.requestpayout = async (req, res) => {
         return res.status(400).json({ message: "failed", data: "CIMB pay out maximum value is ₱5000." });
     }
 
-
     const maintenances = await Maintenance.findOne({ type: "payout" }).then((data) => data);
-
-     if (maintenances.value == "1") {
-         return res.status(400).json({ message: "failed", data: "Request payout is only available during friday." });
-     }
+    if (maintenances.value == "1") {
+        return res.status(400).json({ message: "failed", data: "Request payout is only available during friday." });
+    }
 
     const exist = await Payout.find({
         owner: new mongoose.Types.ObjectId(id),
         type: type,
         status: "processing"
-    }).then((data) => data);
+    });
 
     if (exist.length > 0) {
         return res.status(400).json({
@@ -47,125 +43,114 @@ exports.requestpayout = async (req, res) => {
         });
     }
 
-    const wallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: type })
-        .then((data) => data)
-        .catch((err) => {
-            console.log(`There's a problem getting leaderboard data ${err}`);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const wallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: type }).session(session);
+        let unilevelwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "unilevelwallet" }).session(session);
+        let directwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "directwallet" }).session(session);
+
+        if (!unilevelwallet) {
+            unilevelwallet = await Userwallets.create([{
+            owner: new mongoose.Types.ObjectId(id),
+            type: "unilevelwallet",
+            amount: 0
+            }], { session });
+            unilevelwallet = unilevelwallet[0];
+        }
+
+        if (!directwallet) {
+            directwallet = await Userwallets.create([{
+            owner: new mongoose.Types.ObjectId(id),
+            type: "directwallet", 
+            amount: 0
+            }], { session });
+            directwallet = directwallet[0];
+        }
+
+        let totalBalance = 0;
+        if(type == "commissionwallet"){
+            totalBalance = unilevelwallet.amount + directwallet.amount;
+        } else if (type == "chronocoinwallet"){
+            totalBalance = wallet.amount;
+        }
+
+        if (payoutvalue > totalBalance) {
+            await session.abortTransaction();
             return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
+                message: "failed",
+                data: "The amount is greater than your combined wallet balance"
             });
-        });
+        }
 
-    const unilevelwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "unilevelwallet" })
-        .then((data) => data)
-        .catch((err) => {
-            console.log(`There's a problem getting unilevel wallet data ${err}`);
+        const balanceleft = totalBalance - payoutvalue;
+
+        if (type == "commissionwallet") {
+            await Userwallets.findOneAndUpdate(
+                { owner: new mongoose.Types.ObjectId(id), type: type },
+                { $set: { amount: balanceleft } },
+                { session }
+            );
+            
+            if (payoutvalue > directwallet.amount) {
+                const deductamount = payoutvalue - directwallet.amount;
+                await Userwallets.findOneAndUpdate(
+                    { owner: new mongoose.Types.ObjectId(id), type: "directwallet" },
+                    { $set: { amount: 0 } },
+                    { session }
+                );
+                await Userwallets.findOneAndUpdate(
+                    { owner: new mongoose.Types.ObjectId(id), type: "unilevelwallet" },
+                    { $inc: { amount: -deductamount } },
+                    { session }
+                );
+            } else {
+                await Userwallets.findOneAndUpdate(
+                    { owner: new mongoose.Types.ObjectId(id), type: "directwallet" },
+                    { $inc: { amount: -payoutvalue } },
+                    { session }
+                );
+            }
+        } else if (type == "chronocoinwallet") {
+            await Userwallets.findOneAndUpdate(
+                { owner: new mongoose.Types.ObjectId(id), type: type },
+                { $inc: { amount: -payoutvalue } },
+                { session }
+            );
+        } else {
+            await session.abortTransaction();
             return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
+                message: "failed",
+                data: "Invalid wallet type."
             });
-        });
+        }
 
-    const directwallet = await Userwallets.findOne({ owner: new mongoose.Types.ObjectId(id), type: "directwallet" })
-        .then((data) => data)
-        .catch((err) => {
-            console.log(`There's a problem getting direct wallet data ${err}`);
-            return res.status(400).json({
-                message: "bad-request", 
-                data: "There's a problem with the server! Please contact customer support for more details."
-            });
-        });
-    let totalBalance = 0
+        await Payout.create([{
+            owner: new mongoose.Types.ObjectId(id),
+            status: "processing",
+            value: payoutvalue,
+            type: type,
+            paymentmethod: paymentmethod,
+            accountname: accountname,
+            accountnumber: accountnumber
+        }], { session });
 
-    if(type == "commissionwallet"){
-     totalBalance = unilevelwallet.amount + directwallet.amount;
-    } else if (type == "chronocoinwallet"){
-        totalBalance = wallet.amount
-    }
+        await session.commitTransaction();
+        return res.json({ message: "success" });
 
-    if (payoutvalue > totalBalance) {
+    } catch (error) {
+        await session.abortTransaction();
+        console.log(`Error in requestpayout: ${error}`);
         return res.status(400).json({
-            message: "failed",
-            data: "The amount is greater than your combined wallet balance"
-        });
-    }
-
-    const balanceleft = totalBalance - payoutvalue
-
-    if (type == "commissionwallet") {
-    await Userwallets.findOneAndUpdate(
-        { owner: new mongoose.Types.ObjectId(id), type: type },
-        { $set: { amount: balanceleft } }
-    ).catch((err) => {
-        console.log(`There's a problem deducting payout value for ${username} with value ${payoutvalue}. Error: ${err}`);
-        return res.status(400).json({
-            message: "bad-request",
+            message: "bad-request", 
             data: "There's a problem with the server! Please contact customer support for more details."
         });
-    });
-    
-    if (payoutvalue > directwallet.amount) {
-        const deductamount =  payoutvalue - directwallet.amount
-        
-        directwallet.amount = 0
-        
-        unilevelwallet.amount = unilevelwallet.amount - deductamount
-        
-        await unilevelwallet.save()
-        await directwallet.save()
-    } else {
-        const deductamount = directwallet.amount - payoutvalue
-        directwallet.amount = deductamount
-        await directwallet.save()
+    } finally {
+        session.endSession();
     }
-    } else if (type == "chronocoinwallet") {
-        await Userwallets.findOneAndUpdate(
-            { owner: new mongoose.Types.ObjectId(id), type: type },
-            { $inc: { amount: -payoutvalue } }
-        ).catch((err) => {
-            console.log(`There's a problem deducting payout value for ${username} with value ${payoutvalue}. Error: ${err}`);
-            return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
-            });
-        });
-    } else {
-        return res.status(400).json({
-            message: "failed",
-            data: "Invalid wallet type."
-        });
-    }
-
-    await Payout.create({
-        owner: new mongoose.Types.ObjectId(id),
-        status: "processing",
-        value: payoutvalue,
-        type: type,
-        paymentmethod: paymentmethod,
-        accountname: accountname,
-        accountnumber: accountnumber
-    }).catch(async (err) => {
-        await Userwallets.findOneAndUpdate(
-            { owner: new mongoose.Types.ObjectId(id), type: type },
-            { $inc: { amount: payoutvalue } }
-        ).catch((err) => {
-            console.log(`There's a problem getting leaderboard data ${err}`);
-            return res.status(400).json({
-                message: "bad-request",
-                data: "There's a problem with the server! Please contact customer support for more details."
-            });
-        });
-
-        console.log(`There's a problem getting leaderboard data ${err}`);
-        return res.status(400).json({
-            message: "bad-request",
-            data: "There's a problem with the server! Please contact customer support for more details."
-        });
-    });
-
-    return res.json({ message: "success" });
 };
+
 exports.getrequesthistoryplayer = async (req, res) => {
     const {id, username} = req.user
     const {page, limit} = req.query
