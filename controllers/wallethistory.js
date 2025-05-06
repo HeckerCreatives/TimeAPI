@@ -370,15 +370,30 @@ exports.getplayerwallethistoryforadmin = async (req, res) => {
         page: parseInt(page) || 0,
         limit: parseInt(limit) || 10
     };
+
+    let wallettype
     
     let wallethistorypipeline
+
+    if (type == "creditwallet"){
+        wallettype = "creditwallet"
+    }
+    else if (type == "chronocoinwallet"){
+        wallettype = "chronocoinwallet"
+    }
+    else if (type == "directwallet"){
+        wallettype = "directcommissionwallet"
+    }
+    else if (type == "commissionwallet"){
+        wallettype = "commissionwallet"
+    }
 
     if (type == "creditwallet" || type == "chronocoinwallet"){
         wallethistorypipeline = [
             {
                 $match: {
                     owner: new mongoose.Types.ObjectId(playerid), 
-                    type: type
+                    type: wallettype
                 }
             },
             {
@@ -425,7 +440,7 @@ exports.getplayerwallethistoryforadmin = async (req, res) => {
             {
                 $match: {
                     owner: new mongoose.Types.ObjectId(playerid), 
-                    type: type
+                    type: wallettype
                 }
             },
             {
