@@ -742,6 +742,7 @@ exports.getinventoryhistoryuseradmin = async (req, res) => {
         const {createdAt,  chronotype, amount, type} = tempdata
 
         data.history.push({
+            id: tempdata._id,
             chronotype: chronotype,
             type: type,
             amount: amount,
