@@ -695,3 +695,59 @@ exports.deleteplayerinventoryhistorysuperadmin = async (req, res) => {
     return res.status(200).json({ message: "success"});
 }
 
+exports.getinventoryhistoryuseradmin = async (req, res) => {
+    const {id, username} = req.user
+    const {userid, type, page, limit} = req.query
+
+    const pageOptions = {
+        page: parseInt(page) || 0,
+        limit: parseInt(limit) || 10
+    }
+
+    const history = await Inventoryhistory.find({ owner: new mongoose.Types.ObjectId(userid), type: { $regex: type, $options: "i" }})    
+    .skip(pageOptions.page * pageOptions.limit)
+    .limit(pageOptions.limit)
+    .sort({'createdAt': -1})
+    .then(data => data)
+    .catch(err => {
+        console.log(`There's a problem getting the inventory history of ${userid}. Error: ${err}`)
+
+        return res.status(400).json({message: "bad-request", data: "There's a problem getting the inventory history. Please contact customer support."})
+    })
+
+    if (history.length <= 0){
+        return res.json({message: "success", data: {
+            history: [],
+            totalpages: 0
+        }})
+    }
+
+    const totalPages = await Inventoryhistory.countDocuments({owner: new mongoose.Types.ObjectId(userid), type: type})
+    .then(data => data)
+    .catch(err => {
+
+        console.log(`Failed to count documents inventory history data for ${userid}, error: ${err}`)
+
+        return res.status(401).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+    })
+
+    const pages = Math.ceil(totalPages / pageOptions.limit)
+
+    const data = {
+        history: [],
+        totalpages: pages
+    }
+
+    history.forEach(tempdata => {
+        const {createdAt,  chronotype, amount, type} = tempdata
+
+        data.history.push({
+            chronotype: chronotype,
+            type: type,
+            amount: amount,
+            createdAt: createdAt
+        })
+    })
+
+    return res.json({message: "success", data: data})
+}
