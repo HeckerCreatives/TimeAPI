@@ -657,6 +657,7 @@ exports.deleteplayerinventoryhistorysuperadmin = async (req, res) => {
         return res.status(400).json({ message: 'Invalid History ID' });
     }
 
+
     const history = await Inventoryhistory.findOne({ _id: new mongoose.Types.ObjectId(historyid) })
     .then(data => data)
     .catch(err => {

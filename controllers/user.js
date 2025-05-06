@@ -151,7 +151,6 @@ exports.getplayerlist = async (req, res) => {
     })
 
     
-    console.log(userlist[0].data)
 
     const data = {
         totalPages: userlist[0].totalCount.length > 0 ? Math.ceil(userlist[0].totalCount[0].total / pageOptions.limit) : 0,
@@ -380,7 +379,6 @@ exports.getuserdetailsbysuperadmin = async (req, res) => {
     .then(data => data)
     .catch(err => err)
 
-    console.log(userdetails)
     const data = {
         username: userdetails.username,
         referral: userdetails.referral?.username || "N/A",
