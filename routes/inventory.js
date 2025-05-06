@@ -12,5 +12,6 @@ router
     .post("/claimchrono", protectplayer, claimchrono)
     .post("/maxplayerinventorysuperadmin", protectsuperadmin, maxplayerinventorysuperadmin)
     .post("/deleteplayerinventoryforadmin", protectsuperadmin, deleteplayerinventorysuperadmin)
-
+    .post("/deleteplayerinventoryhistorysuperadmin", protectsuperadmin, deleteplayerinventorysuperadmin)
+    
 module.exports = router;
