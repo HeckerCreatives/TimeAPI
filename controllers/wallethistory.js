@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Wallethistory = require("../models/Wallethistory");
 const Userwallets = require("../models/Userwallets");
+const Analytics = require("../models/Analytics");
 
 //  #region PLAYER
 
@@ -990,6 +991,12 @@ exports.deleteplayerwallethistoryforadmin = async (req, res) => {
             return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
         })
 
+        await Analytics.findOneAndDelete({ transactionid: historyid })
+        .then(data => data)
+        .catch(err => {
+            console.log(`There's a problem encountered while deleting ${historyid} analytics. Error: ${err}`)
+            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
+        })
 
         // delete the wallet history entry
 
