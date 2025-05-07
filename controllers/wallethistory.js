@@ -991,13 +991,6 @@ exports.deleteplayerwallethistoryforadmin = async (req, res) => {
             return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
         })
 
-        await Analytics.findOneAndDelete({ transactionid: historyid })
-        .then(data => data)
-        .catch(err => {
-            console.log(`There's a problem encountered while deleting ${historyid} analytics. Error: ${err}`)
-            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
-        })
-
         // delete the wallet history entry
 
         await Wallethistory.findOneAndDelete({ _id: new mongoose.Types.ObjectId(historyid) })
@@ -1013,3 +1006,4 @@ exports.deleteplayerwallethistoryforadmin = async (req, res) => {
         return res.status(500).json({ message: "failed", data: "An error occurred while deleting the wallet history." });
     }
 };
+
