@@ -199,5 +199,30 @@ exports.edituserwalletforadmin = async (req, res) => {
     
 }
 
+exports.sendplayerwalletsuperadmin = async (req, res) => {
+    const { id, username } = req.user
+    const { playerid, wallettype, amount } = req.body
+
+    // wallettypes are commisionwallet, fiatbalance and gamebalance
+    if (!playerid || !wallettype) {
+        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
+    }
+
+    if (parseFloat(amount) < 0) {
+        return res.status(400).json({ message: "failed", data: "Amount cannot be negative." });
+    }
+
+    await Userwallets.findOneAndUpdate(
+        { owner: new mongoose.Types.ObjectId(playerid), type: wallettype }, 
+        { $inc: { amount: parseFloat(amount) } }
+    )
+    .then(data => data)
+    .catch(err => {
+        console.log(`Failed to find wallet for ${playerid}, error: ${err}`)
+        return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details." })
+    })
+
+    return res.status(200).json({ message: "success" });
+}
 
 //  #endregion
