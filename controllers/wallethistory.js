@@ -960,10 +960,10 @@ exports.deleteplayerwallethistoryforadmin = async (req, res) => {
 
         let newwallettype 
 
-        if (history.type === "fiatbalance") {
-            newwallettype = "fiatbalance"
-        } else if (history.type === "gamebalance") {
-            newwallettype = "gamebalance"
+        if (history.type === "creditwallet") {
+            newwallettype = "creditwallet"
+        } else if (history.type === "chronocoinwallet") {
+            newwallettype = "chronocoinwallet"
         } else {
             newwallettype = "commissionwallet"
         }
