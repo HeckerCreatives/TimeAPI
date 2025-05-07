@@ -1,5 +1,6 @@
 const { default: mongoose } = require("mongoose");
-const Wallethistory = require("../models/Wallethistory")
+const Wallethistory = require("../models/Wallethistory");
+const Userwallets = require("../models/Userwallets");
 
 //  #region PLAYER
 
@@ -329,37 +330,6 @@ exports.getwallettotalearningsforadmin = async (req, res) => {
     return res.json({message: "success", data: finaldata})
 }
 
-exports.deleteplayerwallethistoryforadmin = async (req, res) => {
-    const { id, username } = req.user;
-    const { historyid } = req.body;
-
-    if (!historyid) {
-        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
-    }
-
-    try {
-        // Fetch the wallet history entry
-        const history = await Wallethistory.findOne({ _id: new mongoose.Types.ObjectId(historyid) });
-        if (!history) {
-            return res.status(400).json({ message: "failed", data: "Wallet history not found." });
-        }
-
-
-        // delete the wallet history entry
-
-        await Wallethistory.findOneAndDelete({ _id: new mongoose.Types.ObjectId(historyid) })
-        .then(data => data)
-        .catch(err => {
-            console.log(`There's a problem encountered while deleting ${historyid} wallet history. Error: ${err}`)
-            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
-        })
-
-        return res.status(200).json({ message: "success" });
-    } catch (err) {
-        console.log(`Failed to delete wallet history for ${username}, history id: ${historyid}, Error: ${err}`);
-        return res.status(500).json({ message: "failed", data: "An error occurred while deleting the wallet history." });
-    }
-};
 
 
 exports.getplayerwallethistoryforadmin = async (req, res) => {
@@ -522,3 +492,180 @@ exports.getplayerwallethistoryforadmin = async (req, res) => {
 
     return res.json({message: "success", data: data})
 }
+
+
+exports.editplayerwallethistoryforadmin = async (req, res) => {
+    const { id, username } = req.user;
+    const { historyid, amount } = req.body;
+
+    if (!historyid) {
+        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
+    }
+
+    if (parseFloat(amount) < 0) {
+        return res.status(400).json({ message: "failed", data: "Amount cannot be negative." });
+    }
+
+    try {
+        // Fetch the wallet history entry
+        const history = await Wallethistory.findOne({ _id: new mongoose.Types.ObjectId(historyid) });
+        if (!history) {
+            return res.status(400).json({ message: "failed", data: "Wallet history not found." });
+        }
+
+        let newwallettype 
+
+        if (history.type === "creditwallet") {
+            newwallettype = "creditwallet"
+        } else if (history.type === "chronocoinwallet") {
+            newwallettype = "chronocoinwallet"
+        } else {
+            newwallettype = "commissionwallet"
+        }
+
+
+        // get the current wallet balance of the user
+
+        const wallet = await Userwallets.findOne({ owner: history.owner, type: newwallettype });
+        if (!wallet) {
+            return res.status(400).json({ message: "failed", data: "Wallet not found." });
+        }
+
+
+        // increment or decrement the wallet balance based on the new amount
+
+        const difference = parseFloat(amount) - history.amount;
+        const newwalletvalue = wallet.amount + difference;
+        
+        if (newwalletvalue < 0) {
+            return res.status(400).json({ message: "failed", data: "Wallet balance cannot be negative." });
+        }
+        await Userwallets.findOneAndUpdate(
+            { owner: history.owner, type: newwallettype },
+            { $inc: { amount: difference } }
+        )
+        .then(data => data)
+        .catch(err => {
+            console.log(`There's a problem encountered while updating ${historyid} wallet history. Error: ${err}`)
+            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
+        })
+
+        history.amount = parseFloat(amount);
+        await history.save();
+
+
+        return res.status(200).json({ message: "success" });
+    } catch (err) {
+        console.log(`Failed to edit wallet history for ${username}, history id: ${historyid}, Error: ${err}`);
+        return res.status(500).json({ message: "failed", data: "An error occurred while editing the wallet history." });
+    }
+};
+
+exports.createplayerwallethistoryforadmin = async (req, res) => {
+    const { id, username } = req.user;
+    const { playerid, type, amount } = req.body;
+
+    if (!playerid || !type) {
+        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
+    }
+
+    if (parseFloat(amount) < 0) {
+        return res.status(400).json({ message: "failed", data: "Amount cannot be negative." });
+    }
+
+    try {
+        const walletHistory = new Wallethistory({
+            owner: new mongoose.Types.ObjectId(playerid),
+            type: type,
+            amount: parseFloat(amount),
+            from: new mongoose.Types.ObjectId(process.env.PAYPETROLLS_ID)
+        });
+
+        await walletHistory.save();
+
+        let newwallettype = type;
+        if (type === "commissionwallet" || type === "directcommissionwallet") {
+            newwallettype = "commissionwallet";
+        }
+
+        await Userwallets.findOneAndUpdate(
+            { owner: playerid, type: newwallettype },
+            { $inc: { amount: parseFloat(amount) } },
+            { new: true }
+        )
+        .catch(err => {
+            console.log(`Failed to update wallet for player ${playerid}, Error: ${err}`);
+            return res.status(400).json({ message: "bad-request", data: "Failed to update wallet balance." });
+        });
+
+        return res.status(200).json({ message: "success" });
+    } catch (err) {
+        console.log(`Failed to create wallet history for ${username}, player: ${playerid}, Error: ${err}`);
+        return res.status(500).json({ message: "failed", data: "An error occurred while creating the wallet history." });
+    }
+};
+
+exports.deleteplayerwallethistoryforadmin = async (req, res) => {
+    const { id, username } = req.user;
+    const { historyid } = req.body;
+
+    if (!historyid) {
+        return res.status(400).json({ message: "failed", data: "Incomplete form data." });
+    }
+
+    try {
+        // Fetch the wallet history entry
+        const history = await Wallethistory.findOne({ _id: new mongoose.Types.ObjectId(historyid) });
+        if (!history) {
+            return res.status(400).json({ message: "failed", data: "Wallet history not found." });
+        }
+
+        let newwallettype 
+
+        if (history.type === "fiatbalance") {
+            newwallettype = "fiatbalance"
+        } else if (history.type === "gamebalance") {
+            newwallettype = "gamebalance"
+        } else {
+            newwallettype = "commissionwallet"
+        }
+
+
+        // get the current wallet balance of the user
+        const wallet = await Userwallets.findOne({ owner: history.owner, type: newwallettype });
+        if (!wallet) {
+            return res.status(400).json({ message: "failed", data: "Wallet not found." });
+        }
+
+        // When deleting a history entry, we need to subtract the history amount from the wallet
+        const newWalletBalance = wallet.amount - history.amount;
+
+        if (newWalletBalance < 0) {
+            return res.status(400).json({ message: "failed", data: "Wallet balance cannot be negative after deletion." });
+        }
+
+        await Userwallets.findOneAndUpdate(
+            { owner: history.owner, type: newwallettype },
+            { $set: { amount: newWalletBalance } }
+        )
+        .catch(err => {
+            console.log(`There's a problem encountered while updating wallet for history deletion ${historyid}. Error: ${err}`)
+            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
+        })
+
+
+        // delete the wallet history entry
+
+        await Wallethistory.findOneAndDelete({ _id: new mongoose.Types.ObjectId(historyid) })
+        .then(data => data)
+        .catch(err => {
+            console.log(`There's a problem encountered while deleting ${historyid} wallet history. Error: ${err}`)
+            return res.status(400).json({ message: "bad-request", data: "There's a problem with the server. Please contact customer support for more details."})
+        })
+
+        return res.status(200).json({ message: "success" });
+    } catch (err) {
+        console.log(`Failed to delete wallet history for ${username}, history id: ${historyid}, Error: ${err}`);
+        return res.status(500).json({ message: "failed", data: "An error occurred while deleting the wallet history." });
+    }
+};
