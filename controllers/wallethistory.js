@@ -4,6 +4,159 @@ const Userwallets = require("../models/Userwallets");
 
 //  #region PLAYER
 
+// exports.playerwallethistory = async (req, res) => {
+//     const {id, username} = req.user
+//     const {type, page, limit} = req.query
+
+//     const pageOptions = {
+//         page: parseInt(page) || 0,
+//         limit: parseInt(limit) || 10
+//     };
+
+//     let wallethistorypipeline;
+    
+//     if (type == "creditwallet"){
+//         wallethistorypipeline = [
+//             {
+//                 $match: {
+//                     owner: new mongoose.Types.ObjectId(id), 
+//                     type: type
+//                 }
+//             },
+//             {
+//                 $sort: { "createdAt": -1 }
+//             },
+//             {
+//                 $lookup: {
+//                     from: "staffusers",
+//                     localField: "from",
+//                     foreignField: "_id",
+//                     as: "staffuserinfo"
+//                 }
+//             },
+//             {
+//                 $unwind: "$staffuserinfo"
+//             },
+//             {
+//                 $lookup: {
+//                     from: "users",
+//                     localField: "owner",
+//                     foreignField: "_id",
+//                     as: "userinfo"
+//                 }
+//             },
+//             {
+//                 $unwind: "$userinfo"
+//             },
+//             {
+//                 $project: {
+//                     type: 1,
+//                     amount: 1,
+//                     fromusername: "$staffuserinfo.username",
+//                     username: "$userinfo.username",
+//                     createdAt: 1
+//                 }
+//             },
+//             {
+//                 $skip: pageOptions.page * pageOptions.limit
+//             },
+//             {
+//                 $limit: pageOptions.limit
+//             }
+//         ]
+//     }
+//     else{
+//         wallethistorypipeline = [
+//             {
+//                 $match: {
+//                     owner: new mongoose.Types.ObjectId(id), 
+//                     type: type
+//                 }
+//             },
+//             {
+//                 $sort: { "createdAt": -1 }
+//             },
+//             {
+//                 $lookup: {
+//                     from: "users",
+//                     localField: "from",
+//                     foreignField: "_id",
+//                     as: "fromuserinfo"
+//                 }
+//             },
+//             {
+//                 $unwind: "$fromuserinfo"
+//             },
+//             {
+//                 $lookup: {
+//                     from: "users",
+//                     localField: "owner",
+//                     foreignField: "_id",
+//                     as: "userinfo"
+//                 }
+//             },
+//             {
+//                 $unwind: "$userinfo"
+//             },
+//             {
+//                 $project: {
+//                     type: 1,
+//                     amount: 1,
+//                     fromusername: "$fromuserinfo.username",
+//                     username: "$userinfo.username",
+//                     minername: 1,
+//                     createdAt: 1,
+//                 }
+//             },
+//             {
+//                 $skip: pageOptions.page * pageOptions.limit
+//             },
+//             {
+//                 $limit: pageOptions.limit
+//             }
+//         ]
+//     }
+
+//     const history = await Wallethistory.aggregate(wallethistorypipeline)
+//     .catch(err => {
+
+//         console.log(`Failed to get wallet history data for ${username}, wallet type: ${type}, player: ${playerid} error: ${err}`)
+
+//         return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+//     })
+    
+//     const historypages = await Wallethistory.countDocuments({owner: new mongoose.Types.ObjectId(id), type: type})
+//     .then(data => data)
+//     .catch(err => {
+
+//         console.log(`Failed to get wallet history count document data for ${username}, wallet type: ${type}, player: ${id} error: ${err}`)
+
+//         return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+//     })
+
+//     const totalPages = Math.ceil(historypages / pageOptions.limit)
+
+//     const data = {
+//         history: [],
+//         pages: totalPages
+//     }
+
+//     history.forEach(historydata => {
+//         const {username, type, amount, fromusername, minername, createdAt} = historydata
+
+//         data.history.push({
+//             username: username,
+//             type: type,
+//             amount: amount,
+//             fromusername: fromusername,
+//             minername: minername,
+//             createdAt: createdAt
+//         })
+//     })
+
+//     return res.json({message: "success", data: data})
+// }
+
 exports.playerwallethistory = async (req, res) => {
     const {id, username} = req.user
     const {type, page, limit} = req.query
@@ -13,18 +166,30 @@ exports.playerwallethistory = async (req, res) => {
         limit: parseInt(limit) || 10
     };
 
-    let wallethistorypipeline;
+    let wallettype
     
+    let wallethistorypipeline
+
     if (type == "creditwallet"){
+        wallettype = "creditwallet"
+    }
+    else if (type == "chronocoinwallet"){
+        wallettype = "chronocoinwallet"
+    }
+    else if (type == "directcommissionwallet"){
+        wallettype = "directcommissionwallet"
+    }
+    else if (type == "commissionwallet"){
+        wallettype = "commissionwallet"
+    }
+
+    if (type == "creditwallet" || type == "chronocoinwallet"){
         wallethistorypipeline = [
             {
                 $match: {
                     owner: new mongoose.Types.ObjectId(id), 
-                    type: type
+                    type: wallettype
                 }
-            },
-            {
-                $sort: { "createdAt": -1 }
             },
             {
                 $lookup: {
@@ -70,11 +235,8 @@ exports.playerwallethistory = async (req, res) => {
             {
                 $match: {
                     owner: new mongoose.Types.ObjectId(id), 
-                    type: type
+                    type: wallettype
                 }
-            },
-            {
-                $sort: { "createdAt": -1 }
             },
             {
                 $lookup: {
@@ -104,8 +266,7 @@ exports.playerwallethistory = async (req, res) => {
                     amount: 1,
                     fromusername: "$fromuserinfo.username",
                     username: "$userinfo.username",
-                    minername: 1,
-                    createdAt: 1,
+                    createdAt: 1
                 }
             },
             {
@@ -122,16 +283,16 @@ exports.playerwallethistory = async (req, res) => {
 
         console.log(`Failed to get wallet history data for ${username}, wallet type: ${type}, player: ${playerid} error: ${err}`)
 
-        return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        return res.status(401).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
     })
     
     const historypages = await Wallethistory.countDocuments({owner: new mongoose.Types.ObjectId(id), type: type})
     .then(data => data)
     .catch(err => {
 
-        console.log(`Failed to get wallet history count document data for ${username}, wallet type: ${type}, player: ${id} error: ${err}`)
+        console.log(`Failed to get wallet history count document data for ${username}, wallet type: ${type}, player: ${playerid} error: ${err}`)
 
-        return res.status(400).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
+        return res.status(401).json({ message: 'failed', data: `There's a problem with your account. Please contact customer support for more details` })
     })
 
     const totalPages = Math.ceil(historypages / pageOptions.limit)
@@ -142,14 +303,14 @@ exports.playerwallethistory = async (req, res) => {
     }
 
     history.forEach(historydata => {
-        const {username, type, amount, fromusername, minername, createdAt} = historydata
+        const {username, type, amount, fromusername, createdAt, _id} = historydata
 
         data.history.push({
+            id: _id,
             username: username,
             type: type,
             amount: amount,
             fromusername: fromusername,
-            minername: minername,
             createdAt: createdAt
         })
     })
@@ -520,7 +681,7 @@ exports.getplayerwallethistoryforadmin = async (req, res) => {
     else if (type == "chronocoinwallet"){
         wallettype = "chronocoinwallet"
     }
-    else if (type == "directwallet"){
+    else if (type == "directcommissionwallet"){
         wallettype = "directcommissionwallet"
     }
     else if (type == "commissionwallet"){
