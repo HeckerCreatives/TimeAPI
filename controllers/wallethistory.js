@@ -732,7 +732,7 @@ exports.editplayerwallethistoryforadmin = async (req, res) => {
 
 exports.createplayerwallethistoryforadmin = async (req, res) => {
     const { id, username } = req.user;
-    const { playerid, type, amount } = req.body;
+    const { playerid, type, amount, user } = req.body;
 
     if (!playerid || !type) {
         return res.status(400).json({ message: "failed", data: "Incomplete form data." });
@@ -743,11 +743,18 @@ exports.createplayerwallethistoryforadmin = async (req, res) => {
     }
 
     try {
+        
+        const userfrom = await Users.findOne({ username: { $regex: new RegExp('^' + user + '$', 'i') } })
+
+        if (!userfrom) {
+            return res.status(400).json({ message: "failed", data: "User not found." });
+        }
+
         const walletHistory = new Wallethistory({
             owner: new mongoose.Types.ObjectId(playerid),
             type: type,
             amount: parseFloat(amount),
-            from: new mongoose.Types.ObjectId(process.env.ADMIN_ID)
+            from: new mongoose.Types.ObjectId(userfrom._id),
         });
 
         await walletHistory.save();
