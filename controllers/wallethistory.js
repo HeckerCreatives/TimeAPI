@@ -747,7 +747,7 @@ exports.createplayerwallethistoryforadmin = async (req, res) => {
             owner: new mongoose.Types.ObjectId(playerid),
             type: type,
             amount: parseFloat(amount),
-            from: new mongoose.Types.ObjectId(process.env.PAYPETROLLS_ID)
+            from: new mongoose.Types.ObjectId(process.env.ADMIN_ID)
         });
 
         await walletHistory.save();
