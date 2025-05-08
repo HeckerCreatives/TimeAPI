@@ -70,6 +70,7 @@ exports.getchrono = async(req, res)=> {
         if (totalleft > 0){
             canbuy = true;
         }
+
         data.push({
             id: temp._id,
             name: temp.name,
@@ -84,6 +85,14 @@ exports.getchrono = async(req, res)=> {
             totalleft: totalleft
         })
     })
+
+    const sortorder = {
+        "rolex_ai_bot": 1,
+        "patek_philippe_ai_bot": 2,
+        "audemars_piguet_ai_bot": 3
+    };
+    
+    data.sort((a, b) => sortorder[a.type] - sortorder[b.type]);
     return res.status(200).json({ message: "success", data: data})
 }
 
