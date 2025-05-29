@@ -39,7 +39,7 @@ exports.getchrono = async(req, res)=> {
 
     chronos.forEach(temp => {
         let canbuy = false;
-        let isunlock = false;
+        let isunlock = true;
         let totalleft = temp.max;
         
         if (temp.type === "rolex_ai_bot") {
